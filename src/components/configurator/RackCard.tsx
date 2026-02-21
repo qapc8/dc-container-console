@@ -7,6 +7,7 @@ import { RACK_HEIGHT_U } from '../../data/containerSpecs';
 import { useConfigStore } from '../../store/configStore';
 import { useUiStore } from '../../store/uiStore';
 import { formatPower, formatFlow, formatTemp, formatPressure } from '../../utils/format';
+import { coolantMap } from '../../data/coolants';
 import { ServerSelector } from './ServerSelector';
 
 interface RackCardProps {
@@ -15,7 +16,7 @@ interface RackCardProps {
 
 export function RackCard({ rack }: RackCardProps) {
   const [showSelector, setShowSelector] = useState(false);
-  const { setRackSlot, clearRackSlot, setNodeCount, results } = useConfigStore();
+  const { setRackSlot, clearRackSlot, setNodeCount, results, coolantId } = useConfigStore();
   const { selectedRackId, setSelectedRack, unitSystem } = useUiStore();
   const isSelected = selectedRackId === rack.id;
 
@@ -118,6 +119,19 @@ export function RackCard({ rack }: RackCardProps) {
             <div className="font-mono text-right text-blue-400">{formatFlow(totalFlow, unitSystem)}</div>
           </>
         )}
+        {totalFlow > 0 && platform.coolingType === 'liquid' && (() => {
+          const coolant = coolantMap.get(coolantId);
+          if (!coolant || platform.maxDeltaT_C <= 0) return null;
+          const liquidHeat_W = totalPower * effectiveLiquidFraction * 1000;
+          const massFlow_kgs = liquidHeat_W / (coolant.specificHeat_JkgK * platform.maxDeltaT_C);
+          const recFlow_Lpm = (massFlow_kgs / coolant.density_kgL) * 60;
+          return (
+            <>
+              <div className="text-slate-400">Rec. Flow</div>
+              <div className="font-mono text-right text-cyan-400">{formatFlow(recFlow_Lpm, unitSystem)}</div>
+            </>
+          );
+        })()}
         <div className="text-slate-400">Cooling</div>
         <div className="font-mono text-right text-slate-300">
           {platform.coolingType === 'liquid' ? `${(effectiveLiquidFraction * 100).toFixed(0)}% liquid` : 'Air'}
