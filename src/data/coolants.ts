@@ -4,7 +4,7 @@ export const coolants: Coolant[] = [
   {
     id: 'pg30',
     name: 'Propylene Glycol 30% (PG30)',
-    specificHeat_JkgK: 3850,
+    specificHeat_JkgK: 3915,          // Engineering Toolbox: 0.935 BTU/lb-F × 4187 at 25°C
     density_kgL: 1.032,
     viscosity_cP: 2.5,
     freezePoint_C: -14,
@@ -20,9 +20,9 @@ export const coolants: Coolant[] = [
   {
     id: 'pg50',
     name: 'Propylene Glycol 50% (PG50)',
-    specificHeat_JkgK: 3480,
+    specificHeat_JkgK: 3558,          // Engineering Toolbox: 0.850 BTU/lb-F × 4187 at 25°C
     density_kgL: 1.048,
-    viscosity_cP: 5.0,
+    viscosity_cP: 3.1,                // DOWFROST data at 25°C
     freezePoint_C: -33,
   },
 ];

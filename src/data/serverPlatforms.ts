@@ -11,16 +11,16 @@ export const serverPlatforms: ServerPlatform[] = [
     id: 'gb300-nvl72',
     name: 'NVIDIA GB300 NVL72',
     formFactor: 'full-rack',
-    rackUnits: 42,
+    rackUnits: 48,               // Supermicro SRS-GB300-NVL72 is 48U rack
     coolingType: 'liquid',
     // 72 B300 GPUs + 36 Grace CPUs in a single rack
     // Supermicro SRS-GB300-NVL72: 8× 33kW power shelves ≈ 132kW capacity
     // NVIDIA reference: ~120–140kW range depending on workload
     powerPerUnit_kW: 132,
-    liquidFraction: 0.95,
+    liquidFraction: 0.90,         // ~90% liquid at rack level (Sunbird, Introl)
     flowPerUnit_Lpm: 80,
-    inletTemp_C: 17,
-    inletTempRange_C: [15, 25],
+    inletTemp_C: 20,              // Aligned with GB200 NVL72 range
+    inletTempRange_C: [20, 25],   // Consistent with GB200 NVL72 (no GB300-specific range published)
     maxDeltaT_C: 15,
     weightPerUnit_kg: 1360,
     maxPerRack: 1,
@@ -29,14 +29,14 @@ export const serverPlatforms: ServerPlatform[] = [
     cpuCount: 36,
     coldPlateDp_bar: 1.0,
     minFlowPerUnit_Lpm: 60,
-    coolantVolumePerUnit_L: 180,
+    coolantVolumePerUnit_L: 200,  // Aligned with GB200 NVL72 (Introl: 200L)
     sourceIds: ['nvidia-gb300-product', 'supermicro-gb300-nvl72', 'sunbird-gb300-power', 'glennklockwood-b300'],
   },
   {
     id: 'gb200-nvl72',
     name: 'NVIDIA GB200 NVL72',
     formFactor: 'full-rack',
-    rackUnits: 42,
+    rackUnits: 48,               // Dell XE9712 / Supermicro confirm 48U rack
     coolingType: 'liquid',
     // 72 Blackwell GPUs + 36 Grace CPUs
     // NVIDIA reference: 120kW (115kW liquid + ~5kW air), 200L coolant volume

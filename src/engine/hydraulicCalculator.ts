@@ -215,7 +215,7 @@ export function calculateHydraulic(
 
   // Pressure drop budget (worst-case path through system)
   const fittingsDp = (totalColdPlateDp + totalBranchPipingDp + headerPipeDp + manifoldDp) * FITTING_LOSS_FRACTION;
-  const totalSystemDp = totalColdPlateDp + manifoldDp + headerPipeDp + CDU_DP_BAR + fittingsDp;
+  const totalSystemDp = totalColdPlateDp + totalBranchPipingDp + manifoldDp + headerPipeDp + CDU_DP_BAR + fittingsDp;
 
   // Pump head in meters: H = ΔP / (ρg)
   const pumpHead_m = (totalSystemDp * 100000) / (density_kgm3 * 9.81);

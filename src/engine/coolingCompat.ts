@@ -7,12 +7,12 @@ import { platformMap } from '../data/serverPlatforms';
 import { getOemChassis } from '../data/oemConfigs';
 
 /**
- * ASHRAE liquid cooling water class definitions.
- * W1: 2-17°C, W2: 2-22°C, W3: 2-32°C, W4: 2-45°C, W5: >45°C
+ * ASHRAE TC 9.9 (2021) liquid cooling water class definitions.
+ * W1: 2-17°C, W2: 2-27°C, W3: 2-32°C, W4: 2-45°C, W5: >45°C
  */
 function getWaterClass(maxInletTemp_C: number): AshraeWaterClass {
   if (maxInletTemp_C <= 17) return 'W1';
-  if (maxInletTemp_C <= 22) return 'W2';
+  if (maxInletTemp_C <= 27) return 'W2';
   if (maxInletTemp_C <= 32) return 'W3';
   if (maxInletTemp_C <= 45) return 'W4';
   return 'W5';
