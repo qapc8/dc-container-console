@@ -2,6 +2,7 @@ import { useConfigStore } from '../../store/configStore';
 import { RackCard } from './RackCard';
 import { ContainerSettings } from './ContainerSettings';
 import { QuickFill } from './QuickFill';
+import { ConfigSummary } from './ConfigSummary';
 
 export function RackConfigurator() {
   const racks = useConfigStore(s => s.racks);
@@ -19,6 +20,9 @@ export function RackConfigurator() {
         </div>
         <ContainerSettings />
       </div>
+
+      {/* Compatibility verdict + recommended specs (shows when all racks populated) */}
+      <ConfigSummary />
     </div>
   );
 }
