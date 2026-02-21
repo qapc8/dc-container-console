@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Plus, X, Minus, ChevronUp } from 'lucide-react';
+import { Plus, X, Minus, ChevronUp, Thermometer } from 'lucide-react';
 import type { RackConfig } from '../../types';
 import { platformMap } from '../../data/serverPlatforms';
 import { getOemChassis, oemList } from '../../data/oemConfigs';
 import { RACK_HEIGHT_U } from '../../data/containerSpecs';
 import { useConfigStore } from '../../store/configStore';
 import { useUiStore } from '../../store/uiStore';
-import { formatPower, formatFlow } from '../../utils/format';
+import { formatPower, formatFlow, formatTemp, formatPressure } from '../../utils/format';
 import { ServerSelector } from './ServerSelector';
 
 interface RackCardProps {
@@ -15,7 +15,7 @@ interface RackCardProps {
 
 export function RackCard({ rack }: RackCardProps) {
   const [showSelector, setShowSelector] = useState(false);
-  const { setRackSlot, clearRackSlot, setNodeCount } = useConfigStore();
+  const { setRackSlot, clearRackSlot, setNodeCount, results } = useConfigStore();
   const { selectedRackId, setSelectedRack, unitSystem } = useUiStore();
   const isSelected = selectedRackId === rack.id;
 
@@ -123,6 +123,44 @@ export function RackCard({ rack }: RackCardProps) {
           {platform.coolingType === 'liquid' ? `${(effectiveLiquidFraction * 100).toFixed(0)}% liquid` : 'Air'}
         </div>
       </div>
+
+      {results && platform.coolingType === 'liquid' && (() => {
+        const thermalRack = results.thermal.perRack.find(r => r.rackId === rack.id);
+        const hydraulicRack = results.hydraulic.perRackBranch.find(r => r.rackId === rack.id);
+        if (!thermalRack) return null;
+
+        const deltaTRatio = thermalRack.deltaT_C / platform.maxDeltaT_C;
+        const outletColor = deltaTRatio > 1 ? 'text-red-400'
+          : deltaTRatio >= 0.8 ? 'text-yellow-400'
+          : 'text-green-400';
+
+        return (
+          <div className="mt-2 pt-2 border-t border-slate-700/50">
+            <div className="flex items-center gap-1 mb-1">
+              <Thermometer className="w-3 h-3 text-slate-500" />
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Thermal / Hydraulic</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+              <div className="text-slate-400">Outlet</div>
+              <div className={`font-mono text-right ${outletColor}`}>
+                {formatTemp(thermalRack.outletTemp_C, unitSystem)}
+              </div>
+              <div className="text-slate-400">ΔT</div>
+              <div className={`font-mono text-right ${deltaTRatio > 1 ? 'text-red-400' : 'text-slate-300'}`}>
+                {formatTemp(thermalRack.deltaT_C, unitSystem)} / {formatTemp(platform.maxDeltaT_C, unitSystem)}
+              </div>
+              {hydraulicRack && (
+                <>
+                  <div className="text-slate-400">Branch ΔP</div>
+                  <div className="font-mono text-right text-slate-300">
+                    {formatPressure(hydraulicRack.total_bar, unitSystem)}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
