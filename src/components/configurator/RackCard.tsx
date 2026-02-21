@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X, Minus, ChevronUp, Thermometer } from 'lucide-react';
+import { Plus, X, Minus, ChevronUp, Thermometer, Droplets } from 'lucide-react';
 import type { RackConfig } from '../../types';
 import { platformMap } from '../../data/serverPlatforms';
 import { getOemChassis, oemList } from '../../data/oemConfigs';
@@ -110,34 +110,46 @@ export function RackCard({ rack }: RackCardProps) {
         </div>
       )}
 
+      {/* ── Power & Cooling ── */}
       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
         <div className="text-slate-400">Power</div>
         <div className={`font-mono text-right ${powerColor}`}>{formatPower(totalPower, unitSystem)}</div>
-        {totalFlow > 0 && (
-          <>
-            <div className="text-slate-400">Flow</div>
-            <div className="font-mono text-right text-blue-400">{formatFlow(totalFlow, unitSystem)}</div>
-          </>
-        )}
-        {totalFlow > 0 && platform.coolingType === 'liquid' && (() => {
-          const coolant = coolantMap.get(coolantId);
-          if (!coolant || platform.maxDeltaT_C <= 0) return null;
-          const liquidHeat_W = totalPower * effectiveLiquidFraction * 1000;
-          const massFlow_kgs = liquidHeat_W / (coolant.specificHeat_JkgK * platform.maxDeltaT_C);
-          const recFlow_Lpm = (massFlow_kgs / coolant.density_kgL) * 60;
-          return (
-            <>
-              <div className="text-slate-400">Rec. Flow</div>
-              <div className="font-mono text-right text-cyan-400">{formatFlow(recFlow_Lpm, unitSystem)}</div>
-            </>
-          );
-        })()}
         <div className="text-slate-400">Cooling</div>
         <div className="font-mono text-right text-slate-300">
           {platform.coolingType === 'liquid' ? `${(effectiveLiquidFraction * 100).toFixed(0)}% liquid` : 'Air'}
         </div>
       </div>
 
+      {/* ── Flow Rates ── */}
+      {totalFlow > 0 && platform.coolingType === 'liquid' && (() => {
+        const coolant = coolantMap.get(coolantId);
+        const recFlow_Lpm = coolant && platform.maxDeltaT_C > 0
+          ? ((totalPower * effectiveLiquidFraction * 1000) / (coolant.specificHeat_JkgK * platform.maxDeltaT_C * coolant.density_kgL)) * 60
+          : null;
+
+        return (
+          <div className="mt-2 pt-2 border-t border-slate-700/50">
+            <div className="flex items-center gap-1 mb-1">
+              <Droplets className="w-3 h-3 text-slate-500" />
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Flow</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+              <div className="text-slate-400">Design</div>
+              <div className="font-mono text-right text-blue-400">{formatFlow(totalFlow, unitSystem)}</div>
+              {recFlow_Lpm != null && (
+                <>
+                  <div className="text-slate-400">Min. Required</div>
+                  <div className={`font-mono text-right ${recFlow_Lpm > totalFlow ? 'text-red-400' : 'text-cyan-400'}`}>
+                    {formatFlow(recFlow_Lpm, unitSystem)}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Temperature ── */}
       {results && platform.coolingType === 'liquid' && (() => {
         const thermalRack = results.thermal.perRack.find(r => r.rackId === rack.id);
         const hydraulicRack = results.hydraulic.perRackBranch.find(r => r.rackId === rack.id);
@@ -147,31 +159,55 @@ export function RackCard({ rack }: RackCardProps) {
         const outletColor = deltaTRatio > 1 ? 'text-red-400'
           : deltaTRatio >= 0.8 ? 'text-yellow-400'
           : 'text-green-400';
+        const barColor = deltaTRatio > 1 ? 'bg-red-400'
+          : deltaTRatio >= 0.8 ? 'bg-yellow-400'
+          : 'bg-green-400';
 
         return (
           <div className="mt-2 pt-2 border-t border-slate-700/50">
-            <div className="flex items-center gap-1 mb-1">
+            <div className="flex items-center gap-1 mb-1.5">
               <Thermometer className="w-3 h-3 text-slate-500" />
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Thermal / Hydraulic</span>
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Temperature</span>
             </div>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-              <div className="text-slate-400">Outlet</div>
-              <div className={`font-mono text-right ${outletColor}`}>
-                {formatTemp(thermalRack.outletTemp_C, unitSystem)}
+            {/* Inlet → Outlet */}
+            <div className="flex items-center justify-between text-xs mb-2">
+              <div>
+                <div className="text-[10px] text-slate-500">Inlet</div>
+                <div className="font-mono text-blue-400">{formatTemp(thermalRack.inletTemp_C, unitSystem)}</div>
               </div>
-              <div className="text-slate-400">ΔT</div>
-              <div className={`font-mono text-right ${deltaTRatio > 1 ? 'text-red-400' : 'text-slate-300'}`}>
-                {formatTemp(thermalRack.deltaT_C, unitSystem)} / {formatTemp(platform.maxDeltaT_C, unitSystem)}
+              <div className="text-slate-600 text-sm px-1">&rarr;</div>
+              <div className="text-right">
+                <div className="text-[10px] text-slate-500">Outlet</div>
+                <div className={`font-mono ${outletColor}`}>{formatTemp(thermalRack.outletTemp_C, unitSystem)}</div>
               </div>
-              {hydraulicRack && (
-                <>
-                  <div className="text-slate-400">Branch ΔP</div>
-                  <div className="font-mono text-right text-slate-300">
-                    {formatPressure(hydraulicRack.total_bar, unitSystem)}
-                  </div>
-                </>
-              )}
             </div>
+            {/* ΔT progress bar */}
+            <div className="text-xs mb-1">
+              <div className="flex justify-between mb-0.5">
+                <span className="text-slate-400">ΔT</span>
+                <span className={`font-mono ${deltaTRatio > 1 ? 'text-red-400' : 'text-slate-300'}`}>
+                  {formatTemp(thermalRack.deltaT_C, unitSystem)}
+                </span>
+              </div>
+              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${barColor}`}
+                  style={{ width: `${Math.min(deltaTRatio * 100, 100)}%` }}
+                />
+              </div>
+              <div className="text-[10px] text-slate-600 text-right mt-0.5">
+                limit {formatTemp(platform.maxDeltaT_C, unitSystem)}
+              </div>
+            </div>
+            {/* Branch ΔP */}
+            {hydraulicRack && (
+              <div className="grid grid-cols-2 gap-x-3 text-xs mt-1">
+                <div className="text-slate-400">Branch ΔP</div>
+                <div className="font-mono text-right text-slate-300">
+                  {formatPressure(hydraulicRack.total_bar, unitSystem)}
+                </div>
+              </div>
+            )}
           </div>
         );
       })()}
