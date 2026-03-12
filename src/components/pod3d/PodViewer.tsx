@@ -105,8 +105,8 @@ export default function PodViewer() {
             <span className="font-mono text-blue-400">{data.supplyTemp_C.toFixed(1)}°C</span>
             <span className="text-slate-500">Return Temp</span>
             <span className="font-mono text-red-400">{data.returnTemp_C.toFixed(1)}°C</span>
-            <span className="text-slate-500">CDUs</span>
-            <span className="font-mono">{data.cduCount} × {data.cduCapacity_kW} kW</span>
+            <span className="text-slate-500">CDU</span>
+            <span className="font-mono">CoolIT CHx2000 (2MW)</span>
             <span className="text-slate-500">Racks</span>
             <span className="font-mono">{data.rackCount}</span>
             <span className="text-slate-500">Heat Rejection</span>
