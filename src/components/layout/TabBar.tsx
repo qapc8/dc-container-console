@@ -1,4 +1,4 @@
-import { Settings, LayoutDashboard, Box, GitCompare, BookOpen } from 'lucide-react';
+import { Settings, LayoutDashboard, Box, Warehouse, GitCompare, BookOpen } from 'lucide-react';
 import { useUiStore } from '../../store/uiStore';
 import type { TabId } from '../../types';
 
@@ -6,6 +6,7 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: 'configure', label: 'Configure', icon: <Settings className="w-4 h-4" /> },
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
   { id: 'container', label: 'Container Layout', icon: <Box className="w-4 h-4" /> },
+  { id: 'pod-3d', label: '3D Pod View', icon: <Warehouse className="w-4 h-4" /> },
   { id: 'compare', label: 'Compare', icon: <GitCompare className="w-4 h-4" /> },
   { id: 'sources', label: 'Data Sources', icon: <BookOpen className="w-4 h-4" /> },
 ];

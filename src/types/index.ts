@@ -476,7 +476,7 @@ export interface ValidationWarning {
 }
 
 // ── UI State ──
-export type TabId = 'configure' | 'dashboard' | 'container' | 'compare' | 'sources';
+export type TabId = 'configure' | 'dashboard' | 'container' | 'pod-3d' | 'compare' | 'sources';
 export type UnitSystem = 'metric' | 'imperial';
 
 export interface SavedConfig {
