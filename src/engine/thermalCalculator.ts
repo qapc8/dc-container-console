@@ -89,9 +89,13 @@ export function calculateClusterThermal(
 
   const totalDeltaT = weightedReturnTemp - inletTemp_C;
 
-  // Coolant volume estimate: liquidRackCount × 4L per rack + 30L baseline (headers/manifolds)
-  const liquidRackCount = liquidRacks.length;
-  const estimatedCoolantVolume = liquidRackCount * 4 + 30;
+  // Coolant volume estimate: sum of per-platform volumes + 30L baseline (headers/manifolds)
+  const estimatedCoolantVolume = racks.reduce((sum, rack) => {
+    if (!rack.slot) return sum;
+    const p = platformMap.get(rack.slot.platformId);
+    if (!p || p.coolingType !== 'liquid') return sum;
+    return sum + p.coolantVolumePerUnit_L * rack.slot.nodeCount;
+  }, 30);
 
   // Total liquid heat for fraction computation
   const totalLiquidHeat = power.totalLiquidHeat_kW;

@@ -136,7 +136,7 @@ function buildChillerSpec(
     evapApproach_C: evapApproach,
     condenserTemp_C: condenserTemp,
     condenserApproach_C: condenserApproach,
-    refrigerant: 'R-410A',
+    refrigerant: 'R-454B',
   };
 }
 

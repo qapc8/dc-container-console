@@ -39,6 +39,63 @@ export const dataSources: DataSource[] = [
     notes: 'B300 SXM 288GB: TDP 1,400W, max power 1,600W. 288GB HBM3e.',
   },
 
+  {
+    id: 'introl-gb300-deploy',
+    label: 'Introl — GB300 NVL72 Blackwell Ultra Deployment',
+    url: 'https://introl.com/blog/why-nvidia-gb300-nvl72-blackwell-ultra-matters',
+    publisher: 'Introl',
+    accessDate: '2025-12',
+    confidence: 'high',
+    notes: 'Detailed GB300 cooling: 30 L/min min DTC flow, 15°C min supply, 12-15°C cold plate ΔT, 2.1 bar loop pressure drop with 30% PG, <10 uS/cm coolant conductivity.',
+  },
+  {
+    id: 'hpe-gb300-quickspecs',
+    label: 'HPE — NVIDIA GB300 NVL72 by HPE QuickSpecs',
+    url: 'https://www.hpe.com/psnow/doc/a50009244enw',
+    publisher: 'HPE',
+    accessDate: '2025-12',
+    confidence: 'high',
+    notes: 'HPE GB300 NVL72: 132-140kW, ~90% liquid / ~10% air heat split, 48U rack.',
+  },
+  {
+    id: 'vertiv-gb300-reference',
+    label: 'Vertiv — GB300 NVL72 Reference Architecture',
+    url: 'https://www.vertiv.com/en-in/about/news-and-insights/articles/educational-articles/vertivs-partnership-with-nvidia-on-gb300-nvl72-for-ai-infrastructure-acceleration/',
+    publisher: 'Vertiv',
+    accessDate: '2025-12',
+    confidence: 'high',
+    notes: 'Vertiv cooling reference for GB300 NVL72: max 142kW supported rack density, hybrid liquid/air cooling architecture.',
+  },
+  {
+    id: 'nvidia-gb300-power-blog',
+    label: 'NVIDIA Developer Blog — GB300 NVL72 Power Features',
+    url: 'https://developer.nvidia.com/blog/how-new-gb300-nvl72-features-provide-steady-power-for-ai/',
+    publisher: 'NVIDIA',
+    accessDate: '2025-12',
+    confidence: 'high',
+    notes: '65J energy storage per GPU via PSU capacitors, 30% peak grid demand reduction, 8× LITEON 33kW power shelves.',
+  },
+
+  // ── GB300 NVL36×2 (deployment variant of NVL72) ──
+  {
+    id: 'semianalysis-gb200-arch',
+    label: 'SemiAnalysis — GB200 Hardware Architecture & NVL36x2 Topology',
+    url: 'https://newsletter.semianalysis.com/p/gb200-hardware-architecture-and-component',
+    publisher: 'SemiAnalysis',
+    accessDate: '2025-12',
+    confidence: 'medium',
+    notes: 'NVL36x2: 36 GPUs per rack, 36 NVSwitch ASICs (vs 18 for NVL72), 162× 1.6T twin-port ACC inter-rack cables. ~10kW more total vs NVL72 due to extra NVSwitches.',
+  },
+  {
+    id: 'nvidia-multinode-nvlink',
+    label: 'NVIDIA Multi-Node NVLink Systems Tuning Guide',
+    url: 'https://docs.nvidia.com/multi-node-nvlink-systems/multi-node-tuning-guide/system.html',
+    publisher: 'NVIDIA',
+    accessDate: '2025-12',
+    confidence: 'high',
+    notes: 'Official NVIDIA documentation for multi-node NVLink topologies including NVL36x2 two-rack deployment.',
+  },
+
   // ── GB200 NVL72 ──
   {
     id: 'nvidia-gb200-product',
