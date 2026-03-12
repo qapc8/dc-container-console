@@ -32,7 +32,7 @@ export interface ServerPlatform {
 }
 
 // ── OEM Configurations ──
-export type OemId = 'dell' | 'hpe' | 'lenovo' | 'supermicro';
+export type OemId = 'nvidia' | 'dell' | 'hpe' | 'lenovo' | 'supermicro';
 
 export interface OemChassis {
   oemId: OemId;

@@ -7,7 +7,7 @@ import type { PlatformId, OemId } from '../../types';
 
 export function QuickFill() {
   const [platformId, setPlatformId] = useState<PlatformId>('gb300-nvl72');
-  const [oemId, setOemId] = useState<OemId>('dell');
+  const [oemId, setOemId] = useState<OemId>('nvidia');
   const quickFill = useConfigStore(s => s.quickFill);
 
   const oems = getOemForPlatform(platformId);

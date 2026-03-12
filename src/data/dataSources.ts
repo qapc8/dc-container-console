@@ -1,6 +1,35 @@
 import type { DataSource } from '../types';
 
 export const dataSources: DataSource[] = [
+  // ── NVIDIA DGX Systems (direct) ──
+  {
+    id: 'nvidia-dgx-gb300',
+    label: 'NVIDIA DGX GB300 Product Page',
+    url: 'https://www.nvidia.com/en-us/data-center/dgx-gb300/',
+    publisher: 'NVIDIA',
+    accessDate: '2025-12',
+    confidence: 'high',
+    notes: 'NVIDIA DGX GB300: rack-scale AI supercomputer. 72 B300 GPUs, 130 TB/s NVLink 5, 1.4 ExaFLOPS FP4.',
+  },
+  {
+    id: 'nvidia-dgx-b300-datasheet',
+    label: 'NVIDIA DGX B300 Datasheet',
+    url: 'https://resources.nvidia.com/en-us-dgx-systems/dgx-b300-datasheet',
+    publisher: 'NVIDIA',
+    accessDate: '2025-12',
+    confidence: 'high',
+    notes: 'DGX B300: 10U air-cooled, 14.5kW (busbar) / 15.1kW (PSU), 168kg, 10-35°C operating range. 8× B300 GPUs, 2× Xeon 6776P CPUs.',
+  },
+  {
+    id: 'nvidia-dgx-spod-gb300-ra',
+    label: 'NVIDIA DGX SuperPOD GB300 Reference Architecture',
+    url: 'https://docs.nvidia.com/pdf/dgx-spod-gb300-ra.pdf',
+    publisher: 'NVIDIA',
+    accessDate: '2025-12',
+    confidence: 'high',
+    notes: 'Official NVIDIA reference architecture for DGX SuperPOD with GB300 NVL72 racks. Cooling, power, and networking design guidance.',
+  },
+
   // ── GB300 NVL72 ──
   {
     id: 'nvidia-gb300-product',
