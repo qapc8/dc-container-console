@@ -18,17 +18,17 @@ export const serverPlatforms: ServerPlatform[] = [
     // NVIDIA reference: ~120–140kW range depending on workload
     powerPerUnit_kW: 132,
     liquidFraction: 0.90,         // ~90% liquid at rack level (HPE, Introl; Vertiv cites 80%)
-    flowPerUnit_Lpm: 80,          // NVIDIA mandate (Introl GB200); QCT cites up to 130 L/min
+    flowPerUnit_Lpm: 130,          // QCT/CoolIT CHx2000: ~150 L/min per rack; Introl: 12-15°C ΔT target
     inletTemp_C: 20,
     inletTempRange_C: [15, 25],   // Introl GB300: 15°C min DTC supply; 25°C upper per GB200 spec
-    maxDeltaT_C: 22,              // At 80 L/min PG30: Q/(ṁCp) = 118.8kW/(1.376×3.915) = 22°C
+    maxDeltaT_C: 15,              // At 130 L/min PG25: Q/(ṁCp) = 118.8kW/(2.225×3.940) = 13.5°C
     weightPerUnit_kg: 1360,
     maxPerRack: 1,
     tdpGpu_W: 1400,
     gpuCount: 72,
     cpuCount: 36,
     coldPlateDp_bar: 1.0,
-    minFlowPerUnit_Lpm: 60,
+    minFlowPerUnit_Lpm: 95,        // 73% of design flow (130 L/min)
     coolantVolumePerUnit_L: 200,  // Aligned with GB200 NVL72 (Introl: 200L)
     sourceIds: ['nvidia-gb300-product', 'supermicro-gb300-nvl72', 'hpe-gb300-quickspecs', 'introl-gb300-deploy', 'sunbird-gb300-power', 'glennklockwood-b300'],
   },
@@ -44,17 +44,17 @@ export const serverPlatforms: ServerPlatform[] = [
     // Scaled from NVL72 132kW: (132/2) + 5kW NVSwitch overhead ≈ 71kW per rack
     powerPerUnit_kW: 71,
     liquidFraction: 0.90,
-    flowPerUnit_Lpm: 45,          // Scaled from NVL72's 80 L/min for higher per-rack thermal load
+    flowPerUnit_Lpm: 70,           // Scaled from NVL72's 130 L/min (half GPUs + NVSwitch overhead)
     inletTemp_C: 20,
     inletTempRange_C: [15, 25],
-    maxDeltaT_C: 21,              // At 45 L/min PG30: 63.9kW/(0.774×3.915) ≈ 21°C
+    maxDeltaT_C: 15,              // At 70 L/min PG25: 63.9kW/(1.198×3.940) = 13.5°C
     weightPerUnit_kg: 750,        // Heavier than NVL72/2 due to 18 NVSwitch ASICs per rack (vs 9)
     maxPerRack: 1,
     tdpGpu_W: 1400,
     gpuCount: 36,
     cpuCount: 18,
     coldPlateDp_bar: 0.8,
-    minFlowPerUnit_Lpm: 34,       // 75% of design flow (45 L/min)
+    minFlowPerUnit_Lpm: 52,        // 75% of design flow (70 L/min)
     coolantVolumePerUnit_L: 110,   // Slightly more than NVL72/2 due to additional NVSwitch cold plates
     sourceIds: ['nvidia-gb300-product', 'semianalysis-gb200-arch', 'nvidia-multinode-nvlink', 'glennklockwood-b300'],
   },
@@ -115,13 +115,13 @@ export const serverPlatforms: ServerPlatform[] = [
     rackUnits: 48,               // Dell XE9712 / Supermicro confirm 48U rack
     coolingType: 'liquid',
     // 72 Blackwell GPUs + 36 Grace CPUs
-    // NVIDIA reference: 120kW (115kW liquid + ~5kW air), 200L coolant volume
+    // NVIDIA reference: 120kW (104kW liquid + ~16kW air), 200L coolant volume
     powerPerUnit_kW: 120,
     liquidFraction: 0.87,
-    flowPerUnit_Lpm: 80,
+    flowPerUnit_Lpm: 110,          // Introl GB200 deployment: 12-15°C ΔT target at design flow
     inletTemp_C: 22,
     inletTempRange_C: [20, 25],
-    maxDeltaT_C: 20,              // At 80 L/min PG30: 104.4kW/(1.376×3.915) ≈ 19.4°C
+    maxDeltaT_C: 15,              // At 110 L/min PG30: 104.4kW/(1.892×3.915) = 14.1°C
     // Compute tray ~1,500kg; full system with NVLink switch tray ~3,000kg
     weightPerUnit_kg: 1500,
     maxPerRack: 1,
@@ -129,7 +129,7 @@ export const serverPlatforms: ServerPlatform[] = [
     gpuCount: 72,
     cpuCount: 36,
     coldPlateDp_bar: 0.8,
-    minFlowPerUnit_Lpm: 60,
+    minFlowPerUnit_Lpm: 80,        // 73% of design flow (110 L/min)
     coolantVolumePerUnit_L: 200,
     sourceIds: ['nvidia-gb200-product', 'introl-gb200-deploy', 'theregister-gb200'],
   },
