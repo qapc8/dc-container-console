@@ -1,3 +1,4 @@
+import { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { PodScene } from './PodScene';
@@ -42,36 +43,53 @@ function usePodData(): PodSceneData | null {
   };
 }
 
+function useContainerHeight() {
+  const [height, setHeight] = useState(600);
+  useEffect(() => {
+    function update() {
+      // Subtract header (~56px) + tab bar (~48px) + main padding (48px)
+      setHeight(Math.max(400, window.innerHeight - 160));
+    }
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return height;
+}
+
 export default function PodViewer() {
   const data = usePodData();
+  const canvasHeight = useContainerHeight();
 
   if (!data) {
     return (
-      <div className="flex items-center justify-center h-full text-slate-400">
+      <div className="flex items-center justify-center text-slate-400" style={{ height: canvasHeight }}>
         <p>Configure racks first to generate the 3D pod view.</p>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full min-h-[600px] bg-slate-950">
+    <div className="relative w-full bg-slate-950 rounded-lg overflow-hidden" style={{ height: canvasHeight }}>
       {/* 3D Canvas */}
       <Canvas
         shadows
         camera={{ position: [18, 14, 16], fov: 45, near: 0.1, far: 200 }}
-        gl={{ antialias: true, toneMapping: 3 /* ACESFilmic */ }}
+        gl={{ antialias: true, toneMapping: 3 }}
       >
-        <fog attach="fog" args={['#0a1929', 30, 70]} />
-        <PodScene data={data} />
-        <OrbitControls
-          makeDefault
-          maxPolarAngle={Math.PI / 2.05}
-          minDistance={8}
-          maxDistance={50}
-          target={[0, 1.5, 0]}
-          enableDamping
-          dampingFactor={0.08}
-        />
+        <Suspense fallback={null}>
+          <fog attach="fog" args={['#0a1929', 30, 70]} />
+          <PodScene data={data} />
+          <OrbitControls
+            makeDefault
+            maxPolarAngle={Math.PI / 2.05}
+            minDistance={8}
+            maxDistance={50}
+            target={[0, 1.5, 0]}
+            enableDamping
+            dampingFactor={0.08}
+          />
+        </Suspense>
       </Canvas>
 
       {/* ── HUD Overlay ── */}

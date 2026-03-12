@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Text, Line } from '@react-three/drei';
+import { Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
 
 // ── Layout Constants (meters) ──
@@ -9,11 +9,10 @@ const CONT_40_W = 2.438;
 const CONT_40_H = 2.896;
 const CONT_20_L = 6.058;
 const CONT_20_W = 2.438;
-const CONT_20_H = 2.896;
 
 // Compute container = 2× 40ft side-by-side
-const COMPUTE_W = CONT_40_W * 2;          // ~4.876m wide
-const COMPUTE_L = CONT_40_L;              // ~12.192m long
+const COMPUTE_W = CONT_40_W * 2;
+const COMPUTE_L = CONT_40_L;
 const COMPUTE_H = CONT_40_H;
 
 // Positions (center Y at half-height above ground)
@@ -31,7 +30,7 @@ const RACK_W = 0.6;
 const RACK_D = 1.07;
 const RACK_H = 2.0;
 const RACK_GAP = 0.025;
-const AISLE_W = COMPUTE_W - 2 * RACK_D;  // ~2.7m aisle
+const AISLE_W = COMPUTE_W - 2 * RACK_D;
 
 // Colors
 const COLD_BLUE = '#2196f3';
@@ -69,6 +68,42 @@ function tempToColor(temp_C: number): THREE.Color {
   return new THREE.Color().setHSL(0.6 - t * 0.6, 0.85, 0.45);
 }
 
+// ── 3D Label (DOM-based, no font loading) ──
+function Label3D({
+  position,
+  children,
+  color = '#ffffff',
+  size = '0.75rem',
+  bg = false,
+}: {
+  position: [number, number, number];
+  children: React.ReactNode;
+  color?: string;
+  size?: string;
+  bg?: boolean;
+}) {
+  return (
+    <Html position={position} center transform={false} style={{ pointerEvents: 'none' }}>
+      <div
+        style={{
+          color,
+          fontSize: size,
+          fontFamily: 'ui-monospace, monospace',
+          fontWeight: 600,
+          whiteSpace: 'nowrap',
+          textShadow: '0 0 6px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.5)',
+          background: bg ? 'rgba(15,23,42,0.75)' : 'transparent',
+          padding: bg ? '2px 6px' : 0,
+          borderRadius: bg ? '4px' : 0,
+          userSelect: 'none',
+        }}
+      >
+        {children}
+      </div>
+    </Html>
+  );
+}
+
 // ── Container Shell ──
 function ContainerShell({
   position,
@@ -76,20 +111,17 @@ function ContainerShell({
   color,
   opacity = 0.12,
   label,
-  labelColor = '#ffffff',
 }: {
   position: [number, number, number];
   size: [number, number, number];
   color: string;
   opacity?: number;
   label: string;
-  labelColor?: string;
 }) {
   const edgesGeom = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(...size)), [size]);
 
   return (
     <group position={position}>
-      {/* Transparent volume */}
       <mesh>
         <boxGeometry args={size} />
         <meshPhysicalMaterial
@@ -102,23 +134,13 @@ function ContainerShell({
           depthWrite={false}
         />
       </mesh>
-      {/* Frame edges */}
       <lineSegments geometry={edgesGeom}>
         <lineBasicMaterial color={color} transparent opacity={0.6} />
       </lineSegments>
-      {/* Corrugation lines (sides) */}
       <ContainerRibs size={size} color={color} />
-      {/* Label */}
-      <Text
-        position={[0, size[1] / 2 + 0.5, 0]}
-        fontSize={0.45}
-        color={labelColor}
-        anchorX="center"
-        anchorY="bottom"
-        font="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2"
-      >
+      <Label3D position={[0, size[1] / 2 + 0.5, 0]} size="0.85rem">
         {label}
-      </Text>
+      </Label3D>
     </group>
   );
 }
@@ -130,16 +152,8 @@ function ContainerRibs({ size, color }: { size: [number, number, number]; color:
     const count = Math.floor(size[0] / step);
     for (let i = 1; i < count; i++) {
       const x = -size[0] / 2 + i * step;
-      // Front face ribs
-      pts.push([
-        [x, -size[1] / 2, size[2] / 2],
-        [x, size[1] / 2, size[2] / 2],
-      ]);
-      // Back face ribs
-      pts.push([
-        [x, -size[1] / 2, -size[2] / 2],
-        [x, size[1] / 2, -size[2] / 2],
-      ]);
+      pts.push([[x, -size[1] / 2, size[2] / 2], [x, size[1] / 2, size[2] / 2]]);
+      pts.push([[x, -size[1] / 2, -size[2] / 2], [x, size[1] / 2, -size[2] / 2]]);
     }
     return pts;
   }, [size]);
@@ -165,16 +179,9 @@ function ContainerJoinSeam({ position, size }: { position: [number, number, numb
   return (
     <group position={position}>
       <Line points={points} color="#ffab00" lineWidth={2} dashed dashSize={0.3} gapSize={0.15} />
-      <Text
-        position={[0, size[1] / 2 + 0.15, 0]}
-        fontSize={0.2}
-        color="#ffab00"
-        anchorX="center"
-        anchorY="bottom"
-        font="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2"
-      >
+      <Label3D position={[0, size[1] / 2 + 0.15, 0]} color="#ffab00" size="0.65rem">
         Container Join
-      </Text>
+      </Label3D>
     </group>
   );
 }
@@ -192,24 +199,18 @@ function Rack({
   power_kW: number;
 }) {
   const color = useMemo(() => tempToColor(outletTemp_C), [outletTemp_C]);
-  const emissive = useMemo(() => {
-    const c = tempToColor(outletTemp_C);
-    return c.clone().multiplyScalar(0.3);
-  }, [outletTemp_C]);
+  const emissive = useMemo(() => tempToColor(outletTemp_C).clone().multiplyScalar(0.3), [outletTemp_C]);
 
   return (
     <group position={position}>
-      {/* Rack body */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[RACK_W, RACK_H, RACK_D]} />
         <meshStandardMaterial color={color} metalness={0.7} roughness={0.25} emissive={emissive} />
       </mesh>
-      {/* Front panel */}
       <mesh position={[0, 0, RACK_D / 2 + 0.002]}>
         <planeGeometry args={[RACK_W * 0.92, RACK_H * 0.96]} />
         <meshStandardMaterial color="#1a1a2e" metalness={0.9} roughness={0.15} />
       </mesh>
-      {/* LED strip */}
       {power_kW > 0 && (
         <mesh position={[RACK_W / 2 - 0.015, 0, RACK_D / 2 + 0.005]}>
           <boxGeometry args={[0.008, RACK_H * 0.85, 0.005]} />
@@ -224,7 +225,7 @@ function Rack({
   );
 }
 
-// ── CDU Unit (inside CDU container) ──
+// ── CDU Cabinet ──
 function CduCabinet({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
@@ -232,12 +233,10 @@ function CduCabinet({ position }: { position: [number, number, number] }) {
         <boxGeometry args={[0.8, 1.8, 0.6]} />
         <meshStandardMaterial color="#37474f" metalness={0.8} roughness={0.2} />
       </mesh>
-      {/* Display panel */}
       <mesh position={[0, 0.4, 0.305]}>
         <planeGeometry args={[0.3, 0.2]} />
         <meshStandardMaterial color="#0d47a1" emissive="#1565c0" emissiveIntensity={2} />
       </mesh>
-      {/* Pipe connectors */}
       <mesh position={[0.25, -0.5, 0.31]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.04, 0.04, 0.12, 8]} />
         <meshStandardMaterial color={COLD_BLUE} metalness={0.9} />
@@ -258,7 +257,6 @@ function UpsModule({ position }: { position: [number, number, number] }) {
         <boxGeometry args={[0.8, 1.6, 0.6]} />
         <meshStandardMaterial color="#4e342e" metalness={0.5} roughness={0.4} />
       </mesh>
-      {/* Status display */}
       <mesh position={[0, 0.5, 0.305]}>
         <planeGeometry args={[0.35, 0.15]} />
         <meshStandardMaterial color="#1b5e20" emissive="#2e7d32" emissiveIntensity={2} />
@@ -271,32 +269,22 @@ function UpsModule({ position }: { position: [number, number, number] }) {
 function ChillerUnit({ position, label }: { position: [number, number, number]; label: string }) {
   return (
     <group position={position}>
-      {/* Main body */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={CHILLER_SIZE} />
         <meshStandardMaterial color={CHILLER_GRAY} metalness={0.6} roughness={0.3} />
       </mesh>
-      {/* Fan grills on top */}
       {[-0.8, 0.8].map((x, i) => (
         <group key={i} position={[x, CHILLER_SIZE[1] / 2 + 0.02, 0]}>
           <mesh>
             <cylinderGeometry args={[0.6, 0.6, 0.05, 24]} />
             <meshStandardMaterial color="#263238" metalness={0.9} roughness={0.1} />
           </mesh>
-          {/* Fan blades */}
           <FanBlade offset={i * Math.PI / 3} />
         </group>
       ))}
-      {/* Label */}
-      <Text
-        position={[0, CHILLER_SIZE[1] / 2 + 0.8, 0]}
-        fontSize={0.35}
-        color="#b0bec5"
-        anchorX="center"
-        font="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2"
-      >
+      <Label3D position={[0, CHILLER_SIZE[1] / 2 + 0.8, 0]} color="#b0bec5">
         {label}
-      </Text>
+      </Label3D>
     </group>
   );
 }
@@ -343,15 +331,7 @@ function FlowPipe({
 
   return (
     <>
-      {/* Glow backing */}
-      <Line
-        points={points}
-        color={color}
-        lineWidth={lineWidth + 4}
-        transparent
-        opacity={0.15}
-      />
-      {/* Animated dashed line */}
+      <Line points={points} color={color} lineWidth={lineWidth + 4} transparent opacity={0.15} />
       <Line
         ref={lineRef}
         points={points}
@@ -362,21 +342,15 @@ function FlowPipe({
         gapSize={0.25}
       />
       {label && labelPosition && (
-        <Text
-          position={labelPosition}
-          fontSize={0.25}
-          color={color}
-          anchorX="center"
-          font="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2"
-        >
+        <Label3D position={labelPosition} color={color} size="0.7rem" bg>
           {label}
-        </Text>
+        </Label3D>
       )}
     </>
   );
 }
 
-// ── Flow Arrow (cone marker) ──
+// ── Flow Arrow ──
 function FlowArrow({
   position,
   direction,
@@ -404,39 +378,11 @@ function FlowArrow({
 function Ground() {
   return (
     <group>
-      {/* Concrete pad */}
       <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
         <planeGeometry args={[40, 30]} />
         <meshStandardMaterial color="#37474f" roughness={0.9} metalness={0.1} />
       </mesh>
-      {/* Grid lines */}
       <gridHelper args={[40, 40, '#455a64', '#37474f']} position={[0, 0.005, 0]} />
-    </group>
-  );
-}
-
-// ── Temperature Legend Bar ──
-function TempLegend3D() {
-  return (
-    <group position={[-8, 0.1, 8]}>
-      {Array.from({ length: 20 }).map((_, i) => {
-        const t = i / 19;
-        const col = new THREE.Color().setHSL(0.6 - t * 0.6, 0.85, 0.45);
-        return (
-          <mesh key={i} position={[i * 0.25, 0, 0]}>
-            <boxGeometry args={[0.24, 0.1, 0.3]} />
-            <meshStandardMaterial color={col} />
-          </mesh>
-        );
-      })}
-      <Text position={[0, 0.25, 0]} fontSize={0.2} color="#90a4ae" anchorX="center"
-        font="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2">
-        15°C
-      </Text>
-      <Text position={[4.75, 0.25, 0]} fontSize={0.2} color="#90a4ae" anchorX="center"
-        font="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2">
-        50°C
-      </Text>
     </group>
   );
 }
@@ -446,22 +392,19 @@ export function PodScene({ data }: { data: PodSceneData }) {
   const rackCount = data.rackCount;
   const maxRacksPerRow = Math.ceil(rackCount / 2);
 
-  // Rack positions inside compute container: two rows facing the aisle
   const rackPositions = useMemo(() => {
-    const positions: { pos: [number, number, number]; rackIdx: number; row: 'north' | 'south' }[] = [];
+    const positions: { pos: [number, number, number]; rackIdx: number }[] = [];
     const startX = -(maxRacksPerRow - 1) * (RACK_W + RACK_GAP) / 2;
-
     for (let i = 0; i < rackCount; i++) {
       const row = i < maxRacksPerRow ? 'north' : 'south';
       const rowIdx = row === 'north' ? i : i - maxRacksPerRow;
       const x = startX + rowIdx * (RACK_W + RACK_GAP);
       const z = row === 'north' ? -(AISLE_W / 2 + RACK_D / 2) : (AISLE_W / 2 + RACK_D / 2);
-      positions.push({ pos: [x, RACK_H / 2, z], rackIdx: i, row });
+      positions.push({ pos: [x, RACK_H / 2, z], rackIdx: i });
     }
     return positions;
   }, [rackCount, maxRacksPerRow]);
 
-  // CDU positions inside CDU container
   const cduPositions = useMemo(() => {
     const count = data.cduCount || 2;
     const spacing = Math.min(1.5, (CONT_20_L - 1) / count);
@@ -469,7 +412,6 @@ export function PodScene({ data }: { data: PodSceneData }) {
     return Array.from({ length: count }, (_, i) => [startX + i * spacing, 0.9, 0] as [number, number, number]);
   }, [data.cduCount]);
 
-  // UPS modules
   const upsCount = Math.max(2, Math.ceil(data.totalPower_kW / 250));
   const upsPositions = useMemo(() => {
     const spacing = Math.min(1.5, (CONT_20_L - 1) / upsCount);
@@ -477,26 +419,23 @@ export function PodScene({ data }: { data: PodSceneData }) {
     return Array.from({ length: upsCount }, (_, i) => [startX + i * spacing, 0.8, 0] as [number, number, number]);
   }, [upsCount]);
 
-  // ── Pipe routes ──
+  // Pipe routes
   const computeNorthWall = COMPUTE_POS[2] - COMPUTE_W / 2;
   const computeSouthWall = COMPUTE_POS[2] + COMPUTE_W / 2;
   const cduSouthWall = CDU_POS[2] + CONT_20_W / 2;
   const upsNorthWall = UPS_POS[2] - CONT_20_W / 2;
 
-  // Coolant supply: CDU → Compute (blue)
   const supplyPipe: [number, number, number][] = [
     [-1.0, COMPUTE_H - 0.3, cduSouthWall],
     [-1.0, COMPUTE_H + 0.5, (cduSouthWall + computeNorthWall) / 2],
     [-1.0, COMPUTE_H - 0.3, computeNorthWall],
   ];
-  // Coolant return: Compute → CDU (red)
   const returnPipe: [number, number, number][] = [
     [1.0, COMPUTE_H - 0.3, computeNorthWall],
     [1.0, COMPUTE_H + 0.5, (cduSouthWall + computeNorthWall) / 2],
     [1.0, COMPUTE_H - 0.3, cduSouthWall],
   ];
 
-  // Secondary: Chiller → CDU (blue)
   const chiller1Supply: [number, number, number][] = [
     [CHILLER1_POS[0], CHILLER_SIZE[1] - 0.3, CHILLER1_POS[2] + CHILLER_SIZE[2] / 2],
     [CHILLER1_POS[0], CHILLER_SIZE[1] + 0.3, (CHILLER1_POS[2] + CDU_POS[2]) / 2],
@@ -507,7 +446,6 @@ export function PodScene({ data }: { data: PodSceneData }) {
     [CHILLER2_POS[0], CHILLER_SIZE[1] + 0.3, (CHILLER2_POS[2] + CDU_POS[2]) / 2],
     [1.5, COMPUTE_H - 0.3, CDU_POS[2] - CONT_20_W / 2],
   ];
-  // Secondary return: CDU → Chiller (red)
   const chiller1Return: [number, number, number][] = [
     [-0.5, COMPUTE_H - 0.3, CDU_POS[2] - CONT_20_W / 2],
     [CHILLER1_POS[0] + 0.8, CHILLER_SIZE[1] + 0.3, (CHILLER1_POS[2] + CDU_POS[2]) / 2],
@@ -519,14 +457,12 @@ export function PodScene({ data }: { data: PodSceneData }) {
     [CHILLER2_POS[0] - 0.8, CHILLER_SIZE[1] - 0.3, CHILLER2_POS[2] + CHILLER_SIZE[2] / 2],
   ];
 
-  // Power: UPS → Compute (amber)
   const powerPipe: [number, number, number][] = [
     [0, 0.3, upsNorthWall],
     [0, 0.3, (upsNorthWall + computeSouthWall) / 2],
     [0, 0.3, computeSouthWall],
   ];
 
-  // Internal manifold pipes inside compute container (overhead)
   const manifoldY = COMPUTE_H - 0.4;
   const manifoldXStart = -(maxRacksPerRow - 1) * (RACK_W + RACK_GAP) / 2 - 0.5;
   const manifoldXEnd = (maxRacksPerRow - 1) * (RACK_W + RACK_GAP) / 2 + 0.5;
@@ -562,10 +498,9 @@ export function PodScene({ data }: { data: PodSceneData }) {
         shadow-camera-bottom={-20}
       />
 
-      {/* Ground */}
       <Ground />
 
-      {/* ── Compute Container (2×40ft) ── */}
+      {/* Compute Container (2×40ft) */}
       <ContainerShell
         position={COMPUTE_POS}
         size={[COMPUTE_L, COMPUTE_H, COMPUTE_W]}
@@ -573,10 +508,7 @@ export function PodScene({ data }: { data: PodSceneData }) {
         opacity={0.08}
         label="Compute Container (2 x 40ft)"
       />
-      <ContainerJoinSeam
-        position={COMPUTE_POS}
-        size={[COMPUTE_L, COMPUTE_H, COMPUTE_W]}
-      />
+      <ContainerJoinSeam position={COMPUTE_POS} size={[COMPUTE_L, COMPUTE_H, COMPUTE_W]} />
 
       {/* Racks inside compute */}
       <group position={COMPUTE_POS}>
@@ -592,61 +524,48 @@ export function PodScene({ data }: { data: PodSceneData }) {
             />
           ) : null;
         })}
-        {/* Aisle label */}
-        <Text
-          position={[0, 0.05, 0]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          fontSize={0.5}
-          color="#ffffff"
-          anchorX="center"
-          font="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2"
-        >
-          {'< HOT AISLE >'}
-        </Text>
-        {/* Internal manifold supply */}
+        <Label3D position={[0, 0.05, 0]} color="#ffffff" size="1rem">
+          HOT AISLE
+        </Label3D>
         <FlowPipe points={supplyManifold} color={COLD_BLUE} lineWidth={2.5} speed={1.5} />
         <FlowPipe points={returnManifold} color={HOT_RED} lineWidth={2.5} speed={1.5} />
       </group>
 
-      {/* ── CDU Container ── */}
+      {/* CDU Container */}
       <ContainerShell
         position={CDU_POS}
-        size={[CONT_20_L, CONT_20_H, CONT_20_W]}
+        size={[CONT_20_L, CONT_40_H, CONT_20_W]}
         color={CDU_STEEL}
         opacity={0.1}
         label={`CDU Container (${data.cduCount} units)`}
       />
       <group position={CDU_POS}>
-        {cduPositions.map((pos, i) => (
-          <CduCabinet key={i} position={pos} />
-        ))}
+        {cduPositions.map((pos, i) => <CduCabinet key={i} position={pos} />)}
       </group>
 
-      {/* ── UPS Container ── */}
+      {/* UPS Container */}
       <ContainerShell
         position={UPS_POS}
-        size={[CONT_20_L, CONT_20_H, CONT_20_W]}
+        size={[CONT_20_L, CONT_40_H, CONT_20_W]}
         color={UPS_GOLD}
         opacity={0.08}
         label={`UPS Container (${Math.round(data.totalPower_kW)} kW)`}
       />
       <group position={UPS_POS}>
-        {upsPositions.map((pos, i) => (
-          <UpsModule key={i} position={pos} />
-        ))}
+        {upsPositions.map((pos, i) => <UpsModule key={i} position={pos} />)}
       </group>
 
-      {/* ── Chillers ── */}
+      {/* Chillers */}
       <ChillerUnit position={CHILLER1_POS} label={`Chiller A (${Math.round(data.heatRejection_kW / 2)} kW)`} />
       <ChillerUnit position={CHILLER2_POS} label={`Chiller B (${Math.round(data.heatRejection_kW / 2)} kW)`} />
 
-      {/* ── Primary Coolant Pipes: CDU ↔ Compute ── */}
+      {/* Primary Coolant: CDU ↔ Compute */}
       <FlowPipe
         points={supplyPipe}
         color={COLD_BLUE}
         speed={2.5}
         lineWidth={4}
-        label={`Supply ${data.supplyTemp_C.toFixed(0)}°C  ${data.totalFlow_Lpm.toFixed(0)} L/min`}
+        label={`Supply ${data.supplyTemp_C.toFixed(0)}°C · ${data.totalFlow_Lpm.toFixed(0)} L/min`}
         labelPosition={[-1.0, COMPUTE_H + 0.9, (cduSouthWall + computeNorthWall) / 2]}
       />
       <FlowArrow
@@ -668,24 +587,17 @@ export function PodScene({ data }: { data: PodSceneData }) {
         color={HOT_RED}
       />
 
-      {/* ── Secondary Coolant: Chiller ↔ CDU ── */}
+      {/* Secondary Coolant: Chiller ↔ CDU */}
       <FlowPipe points={chiller1Supply} color={COLD_BLUE} speed={1.8} lineWidth={3} />
       <FlowPipe points={chiller2Supply} color={COLD_BLUE} speed={1.8} lineWidth={3} />
       <FlowPipe points={chiller1Return} color={HOT_RED} speed={1.8} lineWidth={3} />
       <FlowPipe points={chiller2Return} color={HOT_RED} speed={1.8} lineWidth={3} />
 
-      {/* Secondary loop label */}
-      <Text
-        position={[0, CHILLER_SIZE[1] + 1.5, (CHILLER1_POS[2] + CDU_POS[2]) / 2]}
-        fontSize={0.3}
-        color="#90a4ae"
-        anchorX="center"
-        font="https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfAZ9hiA.woff2"
-      >
+      <Label3D position={[0, CHILLER_SIZE[1] + 1.5, (CHILLER1_POS[2] + CDU_POS[2]) / 2]} color="#90a4ae">
         Secondary Coolant Loop
-      </Text>
+      </Label3D>
 
-      {/* ── Power Cables: UPS → Compute ── */}
+      {/* Power: UPS → Compute */}
       <FlowPipe
         points={powerPipe}
         color={POWER_AMBER}
@@ -699,9 +611,6 @@ export function PodScene({ data }: { data: PodSceneData }) {
         direction={[0, 0, -1]}
         color={POWER_AMBER}
       />
-
-      {/* ── 3D Temperature Legend ── */}
-      <TempLegend3D />
     </>
   );
 }
