@@ -14,11 +14,11 @@ const BYPASS_FLOW_FRACTION = 0.25;
 // Buffer tank switchover time target (seconds)
 const SWITCHOVER_TIME_S = 30;
 
-// Standard DN pipe sizes for reference (same as hydraulicCalculator)
+// Standard DN pipe sizes — Schedule 10S (ASME B36.19), synced with hydraulicCalculator
 const DN_SIZES: [string, number][] = [
-  ['DN25', 27.9], ['DN32', 36.0], ['DN40', 41.3], ['DN50', 54.5],
-  ['DN65', 70.3], ['DN80', 80.9], ['DN100', 105.3], ['DN125', 130.0],
-  ['DN150', 155.1], ['DN200', 206.5],
+  ['DN25', 27.86], ['DN32', 36.66], ['DN40', 42.76], ['DN50', 54.76],
+  ['DN65', 66.90], ['DN80', 82.80], ['DN100', 108.20], ['DN125', 134.50],
+  ['DN150', 161.50], ['DN200', 211.58],
 ];
 
 const MAX_VELOCITY_MPS = 1.8;

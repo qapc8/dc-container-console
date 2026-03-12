@@ -19,7 +19,7 @@ export const oemConfigs: OemChassis[] = [
   // DGX GB200 NVL72: previous-gen rack-scale system
   { oemId: 'nvidia', oemName: 'NVIDIA', platformId: 'gb200-nvl72', chassisModel: 'DGX GB200 NVL72', rackUnits: 48, additionalPower_kW: 2.0, weightOverhead_kg: 0, sourceIds: ['nvidia-gb200-product', 'introl-gb200-deploy'] },
   // DGX B200: NVIDIA's 10U air-cooled B200 system
-  { oemId: 'nvidia', oemName: 'NVIDIA', platformId: 'hgx-b200', chassisModel: 'DGX B200', rackUnits: 10, additionalPower_kW: 0.5, weightOverhead_kg: 0, sourceIds: ['nvidia-dgx-b200-guide'] },
+  { oemId: 'nvidia', oemName: 'NVIDIA', platformId: 'dgx-b200', chassisModel: 'DGX B200', rackUnits: 10, additionalPower_kW: 0.5, weightOverhead_kg: 0, sourceIds: ['nvidia-dgx-b200-guide'] },
 
   // ── Dell ──
   { oemId: 'dell', oemName: 'Dell', platformId: 'gb300-nvl72', chassisModel: 'PowerEdge XE9712', rackUnits: 48, additionalPower_kW: 2.5, weightOverhead_kg: 80, sourceIds: ['nvidia-gb300-product'] },

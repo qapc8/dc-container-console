@@ -17,11 +17,11 @@ export const serverPlatforms: ServerPlatform[] = [
     // Supermicro SRS-GB300-NVL72: 8× 33kW power shelves ≈ 132kW capacity
     // NVIDIA reference: ~120–140kW range depending on workload
     powerPerUnit_kW: 132,
-    liquidFraction: 0.90,         // ~90% liquid at rack level (Sunbird, Introl)
-    flowPerUnit_Lpm: 80,
-    inletTemp_C: 20,              // Aligned with GB200 NVL72 range
-    inletTempRange_C: [20, 25],   // Consistent with GB200 NVL72 (no GB300-specific range published)
-    maxDeltaT_C: 15,
+    liquidFraction: 0.90,         // ~90% liquid at rack level (HPE, Introl; Vertiv cites 80%)
+    flowPerUnit_Lpm: 80,          // NVIDIA mandate (Introl GB200); QCT cites up to 130 L/min
+    inletTemp_C: 20,
+    inletTempRange_C: [15, 25],   // Introl GB300: 15°C min DTC supply; 25°C upper per GB200 spec
+    maxDeltaT_C: 22,              // At 80 L/min PG30: Q/(ṁCp) = 118.8kW/(1.376×3.915) = 22°C
     weightPerUnit_kg: 1360,
     maxPerRack: 1,
     tdpGpu_W: 1400,
@@ -46,8 +46,8 @@ export const serverPlatforms: ServerPlatform[] = [
     liquidFraction: 0.90,
     flowPerUnit_Lpm: 45,          // Scaled from NVL72's 80 L/min for higher per-rack thermal load
     inletTemp_C: 20,
-    inletTempRange_C: [20, 25],
-    maxDeltaT_C: 15,
+    inletTempRange_C: [15, 25],
+    maxDeltaT_C: 21,              // At 45 L/min PG30: 63.9kW/(0.774×3.915) ≈ 21°C
     weightPerUnit_kg: 750,        // Heavier than NVL72/2 due to 18 NVSwitch ASICs per rack (vs 9)
     maxPerRack: 1,
     tdpGpu_W: 1400,
@@ -64,13 +64,14 @@ export const serverPlatforms: ServerPlatform[] = [
     formFactor: '10u-node',
     rackUnits: 10,
     coolingType: 'air',
-    // 8× B300 GPUs, air-cooled
-    // NVIDIA DGX B300 User Guide: 14.5kW, 168kg (PSU variant)
-    powerPerUnit_kW: 14.5,
+    // 8× B300 GPUs, air-cooled, PSU variant
+    // NVIDIA DGX B300 User Guide: 15.1kW (PSU) / 14.5kW (busbar), 168kg (PSU)
+    // 12× 3.2kW PSUs (N+N redundancy), 1,500 CFM airflow at 70% PWM
+    powerPerUnit_kW: 15.1,
     liquidFraction: 0,
     flowPerUnit_Lpm: 0,
     inletTemp_C: 25,
-    inletTempRange_C: [10, 35],   // NVIDIA DGX B300 datasheet: 10–35°C ambient
+    inletTempRange_C: [10, 30],   // NVIDIA DGX B300 User Guide: 10–30°C (50–86°F)
     maxDeltaT_C: 0,
     weightPerUnit_kg: 168,        // PSU variant per NVIDIA guide
     maxPerRack: 4,                // 42U / 10U = 4
@@ -80,7 +81,32 @@ export const serverPlatforms: ServerPlatform[] = [
     coldPlateDp_bar: 0,
     minFlowPerUnit_Lpm: 0,
     coolantVolumePerUnit_L: 0,
-    sourceIds: ['nvidia-dgx-b300-guide', 'glennklockwood-b300', 'tomshw-b300-tdp'],
+    sourceIds: ['nvidia-dgx-b300-guide', 'nvidia-dgx-b300-datasheet', 'glennklockwood-b300'],
+  },
+  {
+    id: 'dgx-b200',
+    name: 'NVIDIA DGX B200 (10U Air)',
+    formFactor: '10u-node',
+    rackUnits: 10,
+    coolingType: 'air',
+    // 8× B200 GPUs, air-cooled
+    // NVIDIA DGX B200 User Guide: ~14.3kW, 142.4kg
+    // 6× 3.3kW PSUs (5+1 redundancy), 10-35°C ambient
+    powerPerUnit_kW: 14.3,
+    liquidFraction: 0,
+    flowPerUnit_Lpm: 0,
+    inletTemp_C: 25,
+    inletTempRange_C: [10, 35],   // NVIDIA DGX B200 User Guide: 10–35°C
+    maxDeltaT_C: 0,
+    weightPerUnit_kg: 142,        // NVIDIA DGX B200 User Guide: 142.4kg
+    maxPerRack: 4,                // 42U / 10U = 4
+    tdpGpu_W: 1000,              // Air-cooled TDP (vs 1,200W liquid)
+    gpuCount: 8,
+    cpuCount: 2,
+    coldPlateDp_bar: 0,
+    minFlowPerUnit_Lpm: 0,
+    coolantVolumePerUnit_L: 0,
+    sourceIds: ['nvidia-dgx-b200-guide'],
   },
   {
     id: 'gb200-nvl72',
@@ -95,7 +121,7 @@ export const serverPlatforms: ServerPlatform[] = [
     flowPerUnit_Lpm: 80,
     inletTemp_C: 22,
     inletTempRange_C: [20, 25],
-    maxDeltaT_C: 15,
+    maxDeltaT_C: 20,              // At 80 L/min PG30: 104.4kW/(1.376×3.915) ≈ 19.4°C
     // Compute tray ~1,500kg; full system with NVLink switch tray ~3,000kg
     weightPerUnit_kg: 1500,
     maxPerRack: 1,

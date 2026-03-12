@@ -1,5 +1,5 @@
 // ── Server Platforms ──
-export type PlatformId = 'gb300-nvl72' | 'gb300-nvl36x2' | 'dgx-b300' | 'gb200-nvl72' | 'hgx-b300' | 'hgx-b200' | 'xeon-6' | 'epyc-9005';
+export type PlatformId = 'gb300-nvl72' | 'gb300-nvl36x2' | 'dgx-b300' | 'dgx-b200' | 'gb200-nvl72' | 'hgx-b300' | 'hgx-b200' | 'xeon-6' | 'epyc-9005';
 
 export type CoolingType = 'liquid' | 'air';
 export type FormFactor = 'full-rack' | '10u-node' | '4u-node' | '5u-node' | '2u-server';
@@ -48,7 +48,7 @@ export interface OemChassis {
 }
 
 // ── Coolants ──
-export type CoolantId = 'pg30' | 'di-water' | 'pg50';
+export type CoolantId = 'pg25' | 'pg30' | 'di-water' | 'pg50';
 
 export interface Coolant {
   id: CoolantId;
