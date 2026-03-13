@@ -1,5 +1,5 @@
-import { useRef, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useRef, useMemo, useState } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import { Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -73,6 +73,16 @@ export interface PodSceneData {
   cduCapacity_kW: number;
   heatRejection_kW: number;
 }
+
+export interface ViewOptions {
+  nightMode: boolean;
+  cutaway: boolean;
+  showDimensions: boolean;
+  failureMode: 'none' | 'cdu' | 'chiller';
+  showParticles: boolean;
+}
+
+export type CameraPreset = 'default' | 'front' | 'side' | 'top' | 'walkthrough';
 
 // ── Helpers ──
 function tempToColor(temp_C: number): THREE.Color {
@@ -213,17 +223,21 @@ function ContainerJoinSeam({ position, size }: { position: [number, number, numb
 
 // ── Server Rack (detailed) ──
 function ServerRack({
-  position, outletTemp_C, coolingType, power_kW, index,
+  position, outletTemp_C, coolingType, power_kW, index, rackData, failureMode,
 }: {
   position: [number, number, number]; outletTemp_C: number;
   coolingType: 'liquid' | 'air'; power_kW: number; index: number;
+  rackData?: PodSceneData['racks'][0]; failureMode?: string;
 }) {
-  const bodyColor = useMemo(() => tempToColor(outletTemp_C), [outletTemp_C]);
-  const emissiveColor = useMemo(() => tempToColor(outletTemp_C).clone().multiplyScalar(0.25), [outletTemp_C]);
+  const [hovered, setHovered] = useState(false);
+  const effectiveTemp = failureMode === 'cdu' ? outletTemp_C + 15 : outletTemp_C;
+  const bodyColor = useMemo(() => tempToColor(effectiveTemp), [effectiveTemp]);
+  const emissiveColor = useMemo(() => tempToColor(effectiveTemp).clone().multiplyScalar(0.25), [effectiveTemp]);
   const ledColor = coolingType === 'liquid' ? '#00e676' : '#29b6f6';
 
   return (
-    <group position={position}>
+    <group position={position}
+      onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
       {/* Main chassis */}
       <mesh castShadow receiveShadow>
         <boxGeometry args={[RACK_W, RACK_H, RACK_D]} />
@@ -259,6 +273,19 @@ function ServerRack({
       <Label3D position={[0, RACK_H / 2 + 0.15, 0]} color="#90a4ae" size="0.55rem">
         R{index + 1}
       </Label3D>
+      {/* Hover tooltip */}
+      {rackData && (
+        <group position={[0, RACK_H / 2 + 0.6, RACK_D / 2 + 0.3]}>
+          <RackTooltip rack={rackData} visible={hovered} />
+        </group>
+      )}
+      {/* Hover highlight ring */}
+      {hovered && (
+        <mesh position={[0, -RACK_H / 2 + 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.42, 0.45, 32]} />
+          <meshStandardMaterial color="#67e8f9" emissive="#67e8f9" emissiveIntensity={3} side={THREE.DoubleSide} />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -603,8 +630,107 @@ function Ground() {
   );
 }
 
+// ── Rack Hover Tooltip ──
+function RackTooltip({ rack, visible }: {
+  rack: PodSceneData['racks'][0]; visible: boolean;
+}) {
+  if (!visible) return null;
+  return (
+    <Html center style={{ pointerEvents: 'none' }}>
+      <div style={{
+        background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(100,116,139,0.4)',
+        borderRadius: 8, padding: '8px 12px', minWidth: 150,
+        fontFamily: "'Inter', system-ui, sans-serif", fontSize: '0.65rem',
+        color: '#e2e8f0', boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+      }}>
+        <div style={{ fontWeight: 700, color: '#67e8f9', marginBottom: 4, fontSize: '0.7rem' }}>
+          {rack.platformName}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px' }}>
+          <span style={{ color: '#94a3b8' }}>Power</span><span>{rack.power_kW.toFixed(1)} kW</span>
+          <span style={{ color: '#94a3b8' }}>Inlet</span><span style={{ color: '#60a5fa' }}>{rack.inletTemp_C.toFixed(1)}°C</span>
+          <span style={{ color: '#94a3b8' }}>Outlet</span><span style={{ color: '#ef4444' }}>{rack.outletTemp_C.toFixed(1)}°C</span>
+          <span style={{ color: '#94a3b8' }}>Flow</span><span>{rack.flow_Lpm.toFixed(1)} L/min</span>
+          <span style={{ color: '#94a3b8' }}>Cooling</span><span>{rack.coolingType}</span>
+        </div>
+      </div>
+    </Html>
+  );
+}
+
+// ── Coolant Particles (InstancedMesh) ──
+function CoolantParticles({ paths, color, count = 40 }: {
+  paths: [number, number, number][][]; color: string; count?: number;
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const state = useMemo(() => ({
+    offsets: Array.from({ length: count }, () => Math.random()),
+    pathAssign: Array.from({ length: count }, (_, i) => i % paths.length),
+    speeds: Array.from({ length: count }, () => 0.15 + Math.random() * 0.25),
+  }), [count, paths.length]);
+
+  useFrame((_, delta) => {
+    if (!meshRef.current) return;
+    for (let i = 0; i < count; i++) {
+      state.offsets[i] = (state.offsets[i] + state.speeds[i] * delta) % 1;
+      const path = paths[state.pathAssign[i]];
+      if (!path || path.length < 2) continue;
+      const t = state.offsets[i];
+      const totalSegs = path.length - 1;
+      const seg = Math.min(Math.floor(t * totalSegs), totalSegs - 1);
+      const segT = t * totalSegs - seg;
+      const p1 = path[seg], p2 = path[seg + 1];
+      dummy.position.set(
+        p1[0] + (p2[0] - p1[0]) * segT,
+        p1[1] + (p2[1] - p1[1]) * segT,
+        p1[2] + (p2[2] - p1[2]) * segT,
+      );
+      dummy.scale.setScalar(0.6 + Math.sin(t * Math.PI) * 0.4);
+      dummy.updateMatrix();
+      meshRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
+      <sphereGeometry args={[0.045, 6, 6]} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={4} transparent opacity={0.9} />
+    </instancedMesh>
+  );
+}
+
+// ── Dimension Callout ──
+function DimCallout({ from, to, label, offsetY = 0.3 }: {
+  from: [number, number, number]; to: [number, number, number]; label: string; offsetY?: number;
+}) {
+  const mid: [number, number, number] = [
+    (from[0] + to[0]) / 2, (from[1] + to[1]) / 2 + offsetY, (from[2] + to[2]) / 2,
+  ];
+  return (
+    <>
+      <Line points={[from, to]} color="#ffd600" lineWidth={1.5} dashed dashSize={0.15} gapSize={0.1} />
+      {/* End markers */}
+      <mesh position={from}><sphereGeometry args={[0.05, 6, 6]} /><meshStandardMaterial color="#ffd600" /></mesh>
+      <mesh position={to}><sphereGeometry args={[0.05, 6, 6]} /><meshStandardMaterial color="#ffd600" /></mesh>
+      <Label3D position={mid} color="#ffd600" size="0.6rem" bg>{label}</Label3D>
+    </>
+  );
+}
+
+// ── Cutaway clip plane manager ──
+function CutawayManager({ enabled }: { enabled: boolean }) {
+  const { gl } = useThree();
+  useMemo(() => {
+    gl.localClippingEnabled = enabled;
+  }, [enabled, gl]);
+  return null;
+}
+
 // ── Main Scene ──
-export function PodScene({ data }: { data: PodSceneData }) {
+export function PodScene({ data, viewOptions }: { data: PodSceneData; viewOptions: ViewOptions }) {
+  const { nightMode, cutaway, showDimensions, failureMode, showParticles } = viewOptions;
   const rackCount = Math.min(data.rackCount, MAX_RACKS);
 
   // Single row of racks — centered in X, against back wall in Z
@@ -711,12 +837,15 @@ export function PodScene({ data }: { data: PodSceneData }) {
 
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.3} />
-      <hemisphereLight args={['#e3f2fd', '#263238', 0.6]} />
+      {/* Cutaway clip plane */}
+      <CutawayManager enabled={cutaway} />
+
+      {/* Lighting — adjusts for night mode */}
+      <ambientLight intensity={nightMode ? 0.08 : 0.3} />
+      <hemisphereLight args={[nightMode ? '#0a1929' : '#e3f2fd', '#263238', nightMode ? 0.15 : 0.6]} />
       <directionalLight
         position={[20, 25, 15]}
-        intensity={1.5}
+        intensity={nightMode ? 0.4 : 1.5}
         castShadow
         shadow-mapSize-width={4096}
         shadow-mapSize-height={4096}
@@ -728,7 +857,7 @@ export function PodScene({ data }: { data: PodSceneData }) {
         shadow-bias={-0.0001}
       />
       {/* Fill light from opposite side */}
-      <directionalLight position={[-15, 10, -10]} intensity={0.4} />
+      <directionalLight position={[-15, 10, -10]} intensity={nightMode ? 0.1 : 0.4} />
 
       <Ground />
 
@@ -763,6 +892,8 @@ export function PodScene({ data }: { data: PodSceneData }) {
               coolingType={rd.coolingType}
               power_kW={rd.power_kW}
               index={idx}
+              rackData={rd}
+              failureMode={failureMode}
             />
           ) : null;
         })}
@@ -862,6 +993,85 @@ export function PodScene({ data }: { data: PodSceneData }) {
         position={[0, 0.3, (upsNorthWall + computeSouthWall + Y_BASE) / 2 - 0.5]}
         direction={[0, 0, -1]} color={POWER_AMBER}
       />
+
+      {/* ══════ COOLANT PARTICLES ══════ */}
+      {showParticles && (
+        <>
+          <CoolantParticles
+            paths={[
+              supplyHeader,
+              ...branchDrops.map(d => d.supply.map(p => [p[0] + COMPUTE_POS[0], p[1] + COMPUTE_POS[1], p[2] + COMPUTE_POS[2]] as [number, number, number])),
+            ]}
+            color={COLD_BLUE}
+            count={50}
+          />
+          <CoolantParticles
+            paths={[
+              returnHeader,
+              ...branchDrops.map(d => d.ret.map(p => [p[0] + COMPUTE_POS[0], p[1] + COMPUTE_POS[1], p[2] + COMPUTE_POS[2]] as [number, number, number])),
+            ]}
+            color={HOT_RED}
+            count={50}
+          />
+        </>
+      )}
+
+      {/* ══════ DIMENSION CALLOUTS ══════ */}
+      {showDimensions && (
+        <>
+          {/* Compute container length */}
+          <DimCallout
+            from={[-COMPUTE_L / 2, COMPUTE_H + 1.5, COMPUTE_W / 2 + 0.5]}
+            to={[COMPUTE_L / 2, COMPUTE_H + 1.5, COMPUTE_W / 2 + 0.5]}
+            label={`${COMPUTE_L.toFixed(1)}m (2×40ft)`}
+          />
+          {/* Compute container width */}
+          <DimCallout
+            from={[COMPUTE_L / 2 + 0.5, COMPUTE_H + 1.5, -COMPUTE_W / 2]}
+            to={[COMPUTE_L / 2 + 0.5, COMPUTE_H + 1.5, COMPUTE_W / 2]}
+            label={`${COMPUTE_W.toFixed(1)}m wide`}
+          />
+          {/* Aisle width */}
+          <DimCallout
+            from={[manifoldXEnd + 0.8, 0.3 + Y_BASE, RACK_Z_OFFSET + RACK_D / 2]}
+            to={[manifoldXEnd + 0.8, 0.3 + Y_BASE, COMPUTE_W / 2 - 0.15]}
+            label={`${(COMPUTE_W / 2 - 0.15 - (RACK_Z_OFFSET + RACK_D / 2)).toFixed(1)}m aisle`}
+          />
+          {/* Rack row length */}
+          <DimCallout
+            from={[manifoldXStart, -0.1 + Y_BASE, RACK_Z_OFFSET + RACK_D / 2 + 0.5]}
+            to={[manifoldXEnd, -0.1 + Y_BASE, RACK_Z_OFFSET + RACK_D / 2 + 0.5]}
+            label={`${((manifoldXEnd - manifoldXStart)).toFixed(1)}m rack row`}
+          />
+        </>
+      )}
+
+      {/* ══════ FAILURE MODE EFFECTS ══════ */}
+      {failureMode === 'cdu' && (
+        <group position={CDU_POS}>
+          {/* Red warning glow on CDU */}
+          <pointLight position={[0, 1.5, 0.8]} intensity={3} distance={5} color="#ef4444" />
+          <Label3D position={[0, 2.8, 0]} color="#ef4444" size="1rem" bg>
+            ⚠ CDU FAILURE
+          </Label3D>
+        </group>
+      )}
+      {failureMode === 'chiller' && (
+        <>
+          <group position={CHILLER1_POS}>
+            <pointLight position={[0, 2, 0]} intensity={3} distance={5} color="#f59e0b" />
+            <Label3D position={[0, CHILLER_SIZE[1] / 2 + 1.5, 0]} color="#f59e0b" size="1rem" bg>
+              ⚠ CHILLER OFFLINE
+            </Label3D>
+          </group>
+          <group position={CHILLER2_POS}>
+            <pointLight position={[0, 2, 0]} intensity={3} distance={5} color="#f59e0b" />
+            <Label3D position={[0, CHILLER_SIZE[1] / 2 + 1.5, 0]} color="#f59e0b" size="1rem" bg>
+              ⚠ CHILLER OFFLINE
+            </Label3D>
+          </group>
+        </>
+      )}
     </>
   );
 }
